@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"license-server/internals/domain"
 	"log"
 	"os"
 
@@ -9,15 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-type User struct {
-	gorm.Model
-	Name  string
-	Email string
-}
-
 func Migrate(db *gorm.DB) {
 
-	err := db.AutoMigrate(&User{})
+	err := db.AutoMigrate(&domain.User{}, &domain.License{})
 	if err != nil {
 		log.Fatalf("migration failed: %s", err.Error())
 	}

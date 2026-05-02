@@ -3,10 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - WATCHPACK_POLLING=true
+    stdin_open: true
+    tty: true
     ports:
       - 3000:3000
     networks:
       - api-network
+    volumes:
+      - .:/app:cached
 
   db:
     image: postgres

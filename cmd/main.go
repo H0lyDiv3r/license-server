@@ -23,6 +23,6 @@ func main() {
 	r := chi.NewRouter()
 
 	usr := os.Getenv("POSTGRES_USER")
-	fmt.Println("main working", usr)
+	fmt.Println("main working eei", usr)
 	http.ListenAndServe(":3000", r)
 }

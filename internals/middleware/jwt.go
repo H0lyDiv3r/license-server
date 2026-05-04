@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"license-server/internals/domain"
 	"net/http"
 	"os"
 	"strings"
@@ -30,12 +31,9 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
-		user := struct {
-			UserId float64 `json:"user_id"`
-			email  string  `json:"email"`
-		}{
+		user := domain.UserPayload{
 			UserId: claims["user_id"].(float64),
-			email:  claims["email"].(string),
+			Email:  claims["email"].(string),
 		}
 
 		ctx := context.WithValue(r.Context(), "user", user)

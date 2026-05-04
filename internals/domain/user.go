@@ -18,3 +18,8 @@ type SigninRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type UserPayload struct {
+	UserId float64 `json:"user_id"`
+	Email  string  `json:"email"`
+}

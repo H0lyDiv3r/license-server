@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"license-server/db"
 	"license-server/internals/handler"
 	"license-server/internals/middleware"
@@ -29,6 +28,10 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewHandler(userService)
 
+	licenseRepo := repository.NewLicenseRepository(db)
+	licenseService := service.NewLicenseService(licenseRepo)
+	licenseHandler := handler.NewLicenseHandler(licenseService)
+
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signin", userHandler.SigninHandler)
 		r.Post("/signup", userHandler.SignupHandler)
@@ -36,10 +39,10 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTMiddleware)
-		r.Post("/generate", func(w http.ResponseWriter, r *http.Request) {
-			// user := r.Context().Value("user")
-			fmt.Println(r.Context().Value("user"))
-			// w.Write([]byte(user.(string)))
+		r.Route("/license", func(r chi.Router) {
+			r.Post("/generate", licenseHandler.GenerateLicense)
+			r.Post("/activate", licenseHandler.ActivateLicense)
+
 		})
 	})
 

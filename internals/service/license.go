@@ -56,7 +56,11 @@ func (s *LicenseService) ActivateLicense(ctx context.Context, req domain.Activat
 }
 
 func IssueToken(license domain.License, fingerprint string) (string, error) {
-	privateKey, _ := utils.LoadPrivateKey()
+	privateKey, err := utils.LoadPrivateKey()
+
+	if err != nil {
+		return "", err
+	}
 	claims := domain.LicenseClaims{
 		LicenseID: license.ID,
 		UserID:    license.UserID,

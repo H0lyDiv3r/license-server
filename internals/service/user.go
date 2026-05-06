@@ -52,6 +52,16 @@ func (u *UserService) Signin(ctx context.Context, req *domain.SigninRequest) (st
 	return generateJwt(usr)
 }
 
+func (u *UserService) GetUser(ctx context.Context, id int) (domain.User, error) {
+	usr, err := u.repository.GetById(ctx, id)
+
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return usr, nil
+}
+
 func generateJwt(usr domain.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": usr.ID,

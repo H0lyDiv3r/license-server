@@ -30,7 +30,7 @@ func main() {
 
 	licenseRepo := repository.NewLicenseRepository(db)
 	licenseService := service.NewLicenseService(licenseRepo)
-	licenseHandler := handler.NewLicenseHandler(licenseService)
+	licenseHandler := handler.NewLicenseHandler(licenseService, userService)
 
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signin", userHandler.SigninHandler)
@@ -42,6 +42,7 @@ func main() {
 		r.Route("/license", func(r chi.Router) {
 			r.Post("/generate", licenseHandler.GenerateLicense)
 			r.Post("/activate", licenseHandler.ActivateLicense)
+			r.Post("/decode", licenseHandler.DecodeLicense)
 
 		})
 	})

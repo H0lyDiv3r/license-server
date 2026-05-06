@@ -38,3 +38,7 @@ type LicenseClaims struct {
 	Status    string `json:"status"`
 	jwt.RegisteredClaims
 }
+
+type DecodeRequest struct {
+	License string `json:"license"`
+}

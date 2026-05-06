@@ -11,7 +11,7 @@ import (
 
 type UserRepository interface {
 	Create(context.Context, domain.SignupRequest) (domain.User, error)
-	GetById(context.Context, domain.SigninRequest)
+	GetById(context.Context, int) (domain.User, error)
 	GetByEmail(context.Context, domain.SigninRequest) (domain.User, error)
 }
 
@@ -39,8 +39,13 @@ func (u *userRepository) Create(ctx context.Context, req domain.SignupRequest) (
 	return usr, nil
 }
 
-func (u *userRepository) GetById(ctx context.Context, req domain.SigninRequest) {
-	fmt.Println("db call to signin")
+func (u *userRepository) GetById(ctx context.Context, id int) (domain.User, error) {
+
+	usr, err := gorm.G[domain.User](u.db).Where("id=?", id).First(ctx)
+	if err != nil {
+		return domain.User{}, nil
+	}
+	return usr, nil
 }
 
 func (u *userRepository) GetByEmail(ctx context.Context, req domain.SigninRequest) (domain.User, error) {

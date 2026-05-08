@@ -1,7 +1,6 @@
 import { useState } from "react";
 import logo from "./assets/images/logo-universal.png";
 import "./App.css";
-import { Greet } from "../wailsjs/go/main/App";
 import { DecodeLicense } from "../wailsjs/go/license/License";
 
 function App() {
@@ -9,14 +8,13 @@ function App() {
     "Please enter your name below 👇",
   );
   const [name, setName] = useState("");
-  const updateName = (e) => setName(e.target.value);
-  const updateResultText = (result) => setResultText(result);
+  const updateName = (e: any) => setName(e.target.value);
+  const updateResultText = (result: string) => setResultText(result);
 
   // function greet() {
   //     Greet(name).then(updateResultText);
   // }
-
-  const handleDecode = (license) => {
+  const handleDecode = (license: string) => {
     DecodeLicense(license);
   };
 
@@ -35,9 +33,12 @@ function App() {
           name="input"
           type="text"
         />
-        <button className="btn" onClick={() => {
-          handleDecode(name)
-        }}>
+        <button
+          className="btn"
+          onClick={() => {
+            handleDecode(name);
+          }}
+        >
           Greet
         </button>
       </div>

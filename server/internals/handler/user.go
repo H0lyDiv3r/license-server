@@ -24,7 +24,11 @@ func (h *UserHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	w.Write([]byte("user signed up successfully"))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	json.NewEncoder(w).Encode(struct {
+		Message string `json:"message"`
+	}{Message: "successfull signedup"})
 }
 
 func (h *UserHandler) SigninHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +40,9 @@ func (h *UserHandler) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to login", http.StatusInternalServerError)
 	}
-
-	w.Write([]byte(token))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(struct {
+		Token string `json:"token"`
+	}{Token: token})
 }

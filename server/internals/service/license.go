@@ -22,6 +22,7 @@ func NewLicenseService(repo repository.LicenseRepository) LicenseService {
 }
 
 func (s *LicenseService) GenerateKey(ctx context.Context) (domain.License, error) {
+
 	b := make([]byte, 10)
 
 	if _, err := rand.Read(b); err != nil {
@@ -44,12 +45,12 @@ func (s *LicenseService) ActivateLicense(ctx context.Context, req domain.Activat
 
 	license, err := s.repository.GetLicenseByKey(ctx, req.LicenseKey)
 	if err != nil {
-		return "", fmt.Errorf("Key Not Found", err.Error())
+		return "", fmt.Errorf("Key Not Found %s", err.Error())
 	}
 
-	token, err := IssueToken(license, req.FingerPrint)
+	token, err := IssueToken(*license, req.FingerPrint)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate license token:", err.Error())
+		return "", fmt.Errorf("failed to generate license token: %s", err.Error())
 	}
 
 	return token, nil

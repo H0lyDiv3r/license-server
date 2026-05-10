@@ -18,7 +18,7 @@ type License struct {
 	ID        uint          `gorm:"primaryKey"`
 	Key       string        `gorm:"uniqueIndex; not null"`
 	UserID    uint          `gorm:"uniqueIndex; not null"`
-	MachineID string        `gorm:"uniqueIndex"`
+	MachineID *string       `gorm:"uniqueIndex"`
 	Status    LicenseStatus `gorm: "default:'pending'"`
 	IssuedAt  time.Time
 	ExpiresAt time.Time
@@ -41,4 +41,9 @@ type LicenseClaims struct {
 
 type DecodeRequest struct {
 	License string `json:"license"`
+}
+
+type GenerateKeyResponse struct {
+	License License
+	Key     string
 }

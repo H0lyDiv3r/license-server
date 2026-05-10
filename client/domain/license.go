@@ -25,13 +25,15 @@ type LoginResponse struct {
 
 type License struct {
 	ID            uint          `gorm:"primaryKey"`
+	Key           string        `gorm:"uniqueIndex; not null"`
 	LicenseString string        `gorm:"uniqueIndex; not null"`
-	MachineID     string        `gorm:"uniqueIndex"`
+	MachineID     *string       `gorm:"uniqueIndex"`
 	Status        LicenseStatus `gorm: "default:'pending'"`
 	IssuedAt      time.Time
 	ExpiresAt     time.Time
 	RenewedAt     *time.Time
 }
+
 type LicenseStatus = string
 
 const (
@@ -39,3 +41,13 @@ const (
 	statusRevoked LicenseStatus = "revoked"
 	statusPending LicenseStatus = "pending"
 )
+
+type GenerateKeyResponse struct {
+	License License
+	Key     string
+}
+
+type ActivateLicenseRequest struct {
+	FingerPrint string `json:"fingerPrint"`
+	LicenseKey  string `json:"licenseKey"`
+}

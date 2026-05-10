@@ -4,6 +4,10 @@ import {domain} from '../models';
 import {context} from '../models';
 import {state} from '../models';
 
+export function ActivateLicense(arg1:string):Promise<void>;
+
 export function DecodeLicense(arg1:string):Promise<domain.LicenseClaims>;
+
+export function GenerateLicense():Promise<domain.License>;
 
 export function Startup(arg1:context.Context,arg2:state.AppState):Promise<void>;

@@ -21,12 +21,12 @@ func NewLicenseService(repo repository.LicenseRepository) LicenseService {
 	return LicenseService{repository: repo}
 }
 
-func (s *LicenseService) GenerateKey(ctx context.Context) (domain.License, error) {
+func (s *LicenseService) GenerateKey(ctx context.Context) (*domain.License, error) {
 
 	b := make([]byte, 10)
 
 	if _, err := rand.Read(b); err != nil {
-		return domain.License{}, err
+		return nil, err
 	}
 
 	encoded := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)
@@ -36,13 +36,14 @@ func (s *LicenseService) GenerateKey(ctx context.Context) (domain.License, error
 
 	license, err := s.repository.StoreKey(ctx, key)
 	if err != nil {
-		return domain.License{}, err
+		return nil, err
 	}
-	return license, nil
+	return &license, nil
 }
 
 func (s *LicenseService) ActivateLicense(ctx context.Context, req domain.ActivateLicenseRequest) (string, error) {
 
+	fmt.Println("this is the request just incase", req)
 	license, err := s.repository.GetLicenseByKey(ctx, req.LicenseKey)
 	if err != nil {
 		return "", fmt.Errorf("Key Not Found %s", err.Error())
@@ -65,7 +66,7 @@ func IssueToken(license domain.License, fingerprint string) (string, error) {
 	claims := domain.LicenseClaims{
 		LicenseID: license.ID,
 		UserID:    license.UserID,
-		MachineID: license.MachineID,
+		MachineID: fingerprint,
 		Status:    string(license.Status),
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(license.IssuedAt),

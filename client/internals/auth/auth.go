@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"errors"
 	"client/domain"
 	"client/internals/state"
 	"context"
@@ -38,8 +39,11 @@ func (a *Auth) Signin(req domain.LoginRequest) (*domain.LoginResponse, error) {
 
 	if res.StatusCode != http.StatusOK {
 		var errResp map[string]string
-		json.NewDecoder(res.Body).Decode(&errResp)
-		return nil, fmt.Errorf(errResp["error"])
+		_ = json.NewDecoder(res.Body).Decode(&errResp)
+		if msg := errResp["error"]; msg != "" {
+			return nil, errors.New(msg)
+		}
+		return nil, fmt.Errorf("signin failed with status %s", res.Status)
 	}
 
 	var result domain.LoginResponse
@@ -68,8 +72,11 @@ func (a *Auth) Signup(req domain.LoginRequest) (*domain.LoginResponse, error) {
 	fmt.Println("showing stuff", res)
 	if res.StatusCode != http.StatusOK {
 		var errResp map[string]string
-		json.NewDecoder(res.Body).Decode(&errResp)
-		return nil, fmt.Errorf(errResp["error"])
+		_ = json.NewDecoder(res.Body).Decode(&errResp)
+		if msg := errResp["error"]; msg != "" {
+			return nil, errors.New(msg)
+		}
+		return nil, fmt.Errorf("signup failed with status %s", res.Status)
 	}
 
 	r, err := a.Signin(req)

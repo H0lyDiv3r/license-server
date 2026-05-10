@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,43 +19,56 @@ type cred = {
   password: string;
 };
 
-export function AuthScene({ handleNav }: { handleNav: (p: string) => void }) {
+export function AuthScene({
+  handleNav,
+}: {
+  handleNav: (p: "auth" | "app" | "payment") => void;
+}) {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSignin = (cred: cred) => {
-    Signin(cred).then(() => {
-      handleNav("app");
-    });
-  };
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
 
-  const handleSignup = (cred: cred) => {
-    Signup(cred).then(() => {
+    try {
+      if (mode === "signin") {
+        await Signin({ email, password });
+      } else {
+        await Signup({ email, password });
+      }
+
       handleNav("app");
-    });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Authentication failed");
+    }
   };
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{mode === "signin" ? "Sign In" : "Sign Up"}</CardTitle>
-          <CardDescription>
+    <div className="flex min-h-svh items-center justify-center bg-[#f6f6f4] px-4 py-8">
+      <Card className="w-full max-w-md rounded-2xl border border-black/5 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+        <CardHeader className="space-y-2 px-6 pt-6 pb-0">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            Account
+          </p>
+          <CardTitle className="text-3xl font-semibold tracking-tight">
+            {mode === "signin" ? "Sign In" : "Sign Up"}
+          </CardTitle>
+          <CardDescription className="max-w-[28ch] text-sm leading-6 text-muted-foreground">
             {mode === "signin"
               ? "Enter your email and password to continue."
               : "Create an account with your email and password."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6 pt-5">
           <form
-            className="flex flex-col gap-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit}
           >
-            <FieldGroup className="gap-4">
+            <FieldGroup className="gap-3">
               <Field className="gap-2">
                 <FieldLabel htmlFor={`${mode}-email`}>Email</FieldLabel>
                 <Input
@@ -65,6 +78,7 @@ export function AuthScene({ handleNav }: { handleNav: (p: string) => void }) {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl border-black/10 bg-[#fafafa] px-3.5"
                 />
               </Field>
               <Field className="gap-2">
@@ -77,12 +91,12 @@ export function AuthScene({ handleNav }: { handleNav: (p: string) => void }) {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-12"
+                    className="h-11 rounded-xl border-black/10 bg-[#fafafa] pr-12 px-3.5"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    className="absolute inset-y-0 right-0 flex items-center px-4 text-muted-foreground transition-colors hover:text-foreground"
+                    className="absolute inset-y-0 right-0 flex cursor-pointer items-center px-4 text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {showPassword ? (
                       <EyeOffIcon className="size-4" />
@@ -95,19 +109,16 @@ export function AuthScene({ handleNav }: { handleNav: (p: string) => void }) {
             </FieldGroup>
 
             <Button
-              onClick={() => {
-                if (mode === "signin") {
-                  handleSignin({ email, password });
-                } else {
-                  handleSignup({ email, password });
-                }
-              }}
               type="submit"
               size="lg"
-              className="w-full cursor-pointer transition-colors hover:bg-primary/90 active:scale-[0.98]"
+              className="h-11 w-full rounded-xl cursor-pointer bg-black text-white shadow-none transition-colors hover:bg-zinc-800 active:scale-[0.98]"
             >
               {mode === "signin" ? "Sign In" : "Sign Up"}
             </Button>
+
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : null}
 
             <div className="pt-1 text-sm text-muted-foreground">
               {mode === "signin" ? (
@@ -127,7 +138,7 @@ export function AuthScene({ handleNav }: { handleNav: (p: string) => void }) {
                   <button
                     type="button"
                     onClick={() => setMode("signin")}
-                    className="cursor-pointer p-4 font-medium text-foreground underline-offset-4 transition-colors hover:text-primary"
+                    className="cursor-pointer font-medium text-foreground underline-offset-4 transition-colors hover:text-primary"
                   >
                     Sign in
                   </button>

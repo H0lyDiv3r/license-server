@@ -29,6 +29,7 @@ func (l *licenseRepository) StoreKey(ctx context.Context, key string) (domain.Li
 	existing, err := gorm.G[domain.License](l.db).Where("user_id = ?", usr.UserId).First(ctx)
 
 	if err == nil && existing.ID != 0 {
+		fmt.Println("returning existing key", existing)
 		return existing, nil
 	}
 
@@ -69,7 +70,7 @@ func (l *licenseRepository) UpdateLicense(ctx context.Context, license domain.Li
 
 	_, err := gorm.G[domain.License](l.db).Updates(ctx, domain.License{
 		MachineID: license.MachineID,
-		Status:    license.MachineID,
+		Status:    *license.MachineID,
 	})
 
 	if err != nil {

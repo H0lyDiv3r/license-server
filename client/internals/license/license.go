@@ -1,13 +1,18 @@
 package license
 
 import (
+	"bytes"
 	"client/domain"
 	"client/internals/state"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 
+	"github.com/denisbrodbeck/machineid"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -25,6 +30,82 @@ func NewLicense() *License {
 func (l *License) Startup(ctx context.Context, state *state.AppState) {
 	l.ctx = ctx
 	l.state = state
+}
+
+func (l *License) GenerateLicense() (*domain.License, error) {
+	req, err := http.NewRequest("POST", "http://localhost:3000/license/generate", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+l.state.AuthToken)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		var errResp map[string]string
+		_ = json.NewDecoder(res.Body).Decode(&errResp)
+		if msg := errResp["error"]; msg != "" {
+			return nil, errors.New(msg)
+		}
+		return nil, fmt.Errorf("signup failed with status %s", res.Status)
+	}
+
+	var response domain.License
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to read response body %s", err)
+	}
+
+	return &response, nil
+}
+
+func (l *License) ActivateLicense(key string) error {
+
+	machineID, err := machineid.ProtectedID("secure_desktop")
+	if err != nil {
+		return fmt.Errorf("cant read machine id", err)
+	}
+
+	payload, err := json.Marshal(domain.ActivateLicenseRequest{LicenseKey: key, FingerPrint: machineID})
+	if err != nil {
+		return fmt.Errorf("cant read request data", err)
+	}
+
+	req, err := http.NewRequest("POST", "http://localhost:3000/license/activate", bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+l.state.AuthToken)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		var errResp map[string]string
+		_ = json.NewDecoder(res.Body).Decode(&errResp)
+		if msg := errResp["error"]; msg != "" {
+			return errors.New(msg)
+		}
+		return fmt.Errorf("activation failed with status %s", err)
+	}
+
+	var response struct {
+		Token string `json:"token"`
+	}
+
+	err = json.NewDecoder(res.Body).Decode(&response)
+	if err != nil {
+		return fmt.Errorf("failed to parse response body", err)
+	}
+
+	fmt.Println("token generated", response)
+	return nil
 }
 
 func (l *License) DecodeLicense(license string) *domain.LicenseClaims {

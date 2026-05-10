@@ -53,6 +53,49 @@ export namespace domain {
 		    return a;
 		}
 	}
+	export class LoginRequest {
+	    email: string;
+	    password: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LoginRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.email = source["email"];
+	        this.password = source["password"];
+	    }
+	}
+	export class LoginResponse {
+	    token: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LoginResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.token = source["token"];
+	    }
+	}
+
+}
+
+export namespace state {
+	
+	export class AppState {
+	    AuthToken: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.AuthToken = source["AuthToken"];
+	    }
+	}
 
 }
 

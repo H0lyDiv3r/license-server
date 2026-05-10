@@ -4,6 +4,8 @@ import {domain} from '../models';
 import {context} from '../models';
 import {state} from '../models';
 
-export function DecodeLicense(arg1:string):Promise<domain.LicenseClaims>;
+export function Signin(arg1:domain.LoginRequest):Promise<domain.LoginResponse>;
+
+export function Signup(arg1:domain.LoginRequest):Promise<domain.LoginResponse>;
 
 export function Startup(arg1:context.Context,arg2:state.AppState):Promise<void>;

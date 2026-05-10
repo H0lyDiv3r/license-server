@@ -6,6 +6,6 @@ export function DecodeLicense(arg1) {
   return window['go']['license']['License']['DecodeLicense'](arg1);
 }
 
-export function Startup(arg1) {
-  return window['go']['license']['License']['Startup'](arg1);
+export function Startup(arg1, arg2) {
+  return window['go']['license']['License']['Startup'](arg1, arg2);
 }

@@ -2,6 +2,7 @@ package license
 
 import (
 	"client/domain"
+	"client/internals/state"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -11,7 +12,8 @@ import (
 )
 
 type License struct {
-	ctx context.Context
+	ctx   context.Context
+	state *state.AppState
 }
 
 const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
@@ -20,8 +22,9 @@ func NewLicense() *License {
 	return &License{}
 }
 
-func (l *License) Startup(ctx context.Context) {
+func (l *License) Startup(ctx context.Context, state *state.AppState) {
 	l.ctx = ctx
+	l.state = state
 }
 
 func (l *License) DecodeLicense(license string) *domain.LicenseClaims {

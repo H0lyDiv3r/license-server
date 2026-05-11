@@ -14,6 +14,6 @@ export function GenerateLicense() {
   return window['go']['license']['License']['GenerateLicense']();
 }
 
-export function Startup(arg1, arg2) {
-  return window['go']['license']['License']['Startup'](arg1, arg2);
+export function Startup(arg1, arg2, arg3) {
+  return window['go']['license']['License']['Startup'](arg1, arg2, arg3);
 }

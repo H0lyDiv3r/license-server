@@ -23,7 +23,7 @@ func main() {
 	app := NewApp()
 	license := license.NewLicense()
 	auth := auth.NewAuth()
-	_, err := store.NewStore()
+	store, err := store.NewStore()
 
 	if err != nil {
 		log.Fatal("failed to initialize db")
@@ -39,9 +39,9 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		OnStartup: func(ctx context.Context) {
-			app.startup(ctx, s)
-			license.Startup(ctx, s)
-			auth.Startup(ctx, s)
+			app.startup(ctx, s, store)
+			license.Startup(ctx, s, store)
+			auth.Startup(ctx, s, store)
 		},
 		Bind: []interface{}{
 			app,

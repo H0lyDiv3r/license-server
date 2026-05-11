@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"client/domain"
 	"client/internals/state"
+	"client/internals/store"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -19,6 +20,7 @@ import (
 type License struct {
 	ctx   context.Context
 	state *state.AppState
+	store *store.Store
 }
 
 const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
@@ -27,9 +29,10 @@ func NewLicense() *License {
 	return &License{}
 }
 
-func (l *License) Startup(ctx context.Context, state *state.AppState) {
+func (l *License) Startup(ctx context.Context, state *state.AppState, store *store.Store) {
 	l.ctx = ctx
 	l.state = state
+	l.store = store
 }
 
 func (l *License) GenerateLicense() (*domain.License, error) {
@@ -59,6 +62,7 @@ func (l *License) GenerateLicense() (*domain.License, error) {
 		return nil, fmt.Errorf("failed to read response body %s", err)
 	}
 
+	l.store.StoreLicence(l.ctx, response)
 	return &response, nil
 }
 
@@ -105,6 +109,10 @@ func (l *License) ActivateLicense(key string) error {
 	}
 
 	fmt.Println("token generated", response)
+	_, err = l.store.UpdateLicense(l.ctx, domain.License{MachineID: &machineID, LicenseString: response.Token, Status: "active", Key: key})
+	if err != nil {
+		fmt.Println("updating issue", err)
+	}
 	return nil
 }
 

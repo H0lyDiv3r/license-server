@@ -2,6 +2,8 @@ package store
 
 import (
 	"client/domain"
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,7 +12,7 @@ import (
 )
 
 type Store struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 func NewStore() (*Store, error) {
@@ -34,6 +36,41 @@ func NewStore() (*Store, error) {
 	db.AutoMigrate(&domain.License{})
 
 	return &Store{
-		db: db,
+		Db: db,
 	}, nil
+}
+
+func (s *Store) StoreLicence(ctx context.Context, license domain.License) (*domain.License, error) {
+	fmt.Println("going to store the license here", license)
+
+	existing, err := gorm.G[domain.License](s.Db).Where("key = ?", license.Key).First(ctx)
+	if err == nil && existing.ID != 0 {
+		return &existing, nil
+	}
+
+	err = gorm.G[domain.License](s.Db).Create(ctx, &license)
+	if err != nil {
+		return nil, err
+	}
+
+	return &license, nil
+}
+
+func (s *Store) UpdateLicense(ctx context.Context, license domain.License) (*domain.License, error) {
+
+	existing, err := gorm.G[domain.License](s.Db).Where("key = ?", license.Key).First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing.ID == 0 {
+		return nil, fmt.Errorf("license doesnt exist")
+	}
+
+	_, err = gorm.G[domain.License](s.Db).Where("key = ?", license.Key).Updates(ctx, license)
+	if err != nil {
+		return nil, err
+	}
+
+	return &license, nil
 }

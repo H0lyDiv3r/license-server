@@ -10,6 +10,6 @@ export function Signup(arg1) {
   return window['go']['auth']['Auth']['Signup'](arg1);
 }
 
-export function Startup(arg1, arg2) {
-  return window['go']['auth']['Auth']['Startup'](arg1, arg2);
+export function Startup(arg1, arg2, arg3) {
+  return window['go']['auth']['Auth']['Startup'](arg1, arg2, arg3);
 }

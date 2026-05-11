@@ -2,11 +2,12 @@ package auth
 
 import (
 	"bytes"
-	"errors"
 	"client/domain"
 	"client/internals/state"
+	"client/internals/store"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -14,15 +15,17 @@ import (
 type Auth struct {
 	ctx   context.Context
 	state *state.AppState
+	store *store.Store
 }
 
 func NewAuth() *Auth {
 	return &Auth{}
 }
 
-func (a *Auth) Startup(ctx context.Context, state *state.AppState) {
+func (a *Auth) Startup(ctx context.Context, state *state.AppState, store *store.Store) {
 	a.ctx = ctx
 	a.state = state
+	a.store = store
 }
 
 func (a *Auth) Signin(req domain.LoginRequest) (*domain.LoginResponse, error) {

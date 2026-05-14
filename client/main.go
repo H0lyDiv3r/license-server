@@ -20,10 +20,10 @@ var assets embed.FS
 func main() {
 	// Create an instance of the app structure
 	s := &state.AppState{}
-	app := NewApp()
-	license := license.NewLicense()
-	auth := auth.NewAuth()
 	store, err := store.NewStore()
+	app := NewApp(s, store)
+	license := license.NewLicense(s, store)
+	auth := auth.NewAuth(s, store)
 
 	if err != nil {
 		log.Fatal("failed to initialize db")
@@ -39,9 +39,9 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		OnStartup: func(ctx context.Context) {
-			app.startup(ctx, s, store)
-			license.Startup(ctx, s, store)
-			auth.Startup(ctx, s, store)
+			app.startup(ctx)
+			license.Startup(ctx)
+			auth.Startup(ctx)
 		},
 		Bind: []interface{}{
 			app,

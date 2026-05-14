@@ -20,10 +20,10 @@ type License struct {
 	UserID    uint          `gorm:"uniqueIndex; not null"`
 	MachineID *string       `gorm:"uniqueIndex"`
 	Status    LicenseStatus `gorm: "default:'pending'"`
-	IssuedAt  time.Time
+	IssuedAt  time.Time     `gorm:"autoCreateTime"`
 	ExpiresAt time.Time
-	RenewedAt *time.Time
-	User      User `gorm:"foreignKey:UserID"`
+	RenewedAt *time.Time `gorm:"autoUpdateTime"`
+	User      User       `gorm:"foreignKey:UserID"`
 }
 
 type ActivateLicenseRequest struct {

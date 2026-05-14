@@ -1,5 +1,8 @@
 FROM golang:1.26
 
+ENV TZ=Africa/Addis_Ababa
+RUN apt-get update && apt-get install -y tzdata
+
 WORKDIR /app
 
 COPY go.mod go.sum ./

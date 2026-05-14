@@ -18,14 +18,12 @@ type Auth struct {
 	store *store.Store
 }
 
-func NewAuth() *Auth {
-	return &Auth{}
+func NewAuth(state *state.AppState, store *store.Store) *Auth {
+	return &Auth{state: state, store: store}
 }
 
-func (a *Auth) Startup(ctx context.Context, state *state.AppState, store *store.Store) {
+func (a *Auth) Startup(ctx context.Context) {
 	a.ctx = ctx
-	a.state = state
-	a.store = store
 }
 
 func (a *Auth) Signin(req domain.LoginRequest) (*domain.LoginResponse, error) {

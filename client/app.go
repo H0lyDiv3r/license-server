@@ -14,14 +14,13 @@ type App struct {
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(state *state.AppState, store *store.Store) *App {
+	return &App{state: state, store: store}
 }
 
-func (a *App) startup(ctx context.Context, state *state.AppState, store *store.Store) {
+func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	a.state = state
-	a.store = store
+
 }
 func (a *App) IsLoggedIn() bool {
 	return a.state.AuthToken != ""

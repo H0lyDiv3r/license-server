@@ -25,14 +25,12 @@ type License struct {
 
 const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
 
-func NewLicense() *License {
-	return &License{}
+func NewLicense(state *state.AppState, store *store.Store) *License {
+	return &License{state: state, store: store}
 }
 
-func (l *License) Startup(ctx context.Context, state *state.AppState, store *store.Store) {
+func (l *License) Startup(ctx context.Context) {
 	l.ctx = ctx
-	l.state = state
-	l.store = store
 }
 
 func (l *License) GenerateLicense() (*domain.License, error) {

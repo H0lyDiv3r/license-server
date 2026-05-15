@@ -5,13 +5,12 @@ import {
 } from "@/scenes/subscription/SubscriptionScene";
 import { PaymentScene } from "@/scenes/payment/PaymentScene";
 import { useEffect, useState } from "react";
-import { GetState } from "../wailsjs/go/main/App";
-import { state } from "../wailsjs/go/models";
+import { GetState, CheckLicense } from "../wailsjs/go/main/App";
 
 function App() {
-  const [page, setPage] = useState<"auth" | "app" | "payment" | "subscription">(
-    "auth",
-  );
+  const [page, setPage] = useState<
+    "auth" | "app" | "payment" | "subscription" | null
+  >(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   const navigate = (p: "auth" | "app" | "payment" | "subscription") =>
@@ -36,6 +35,10 @@ function App() {
     };
 
     getStateAsync();
+  }, []);
+
+  useEffect(() => {
+    CheckLicense();
   }, []);
 
   switch (page) {
@@ -67,7 +70,7 @@ function App() {
         <PaymentScene plan={selectedPlan} onBack={() => navigate("app")} />
       );
     default:
-      return <AuthScene handleNav={(p) => navigate(p)} />;
+      return <>loading</>;
   }
 }
 

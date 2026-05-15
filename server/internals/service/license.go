@@ -58,6 +58,13 @@ func (s *LicenseService) ActivateLicense(ctx context.Context, req domain.Activat
 		return nil, fmt.Errorf("failed to generate license token: %s", err.Error())
 	}
 
+	if license.Status == "active" {
+		return &domain.ActivateLicenseResponse{
+			License: *license,
+			Token:   token,
+		}, nil
+	}
+
 	license.ExpiresAt = license.ExpiresAt.Add(time.Duration(license.Duration) * 24 * time.Hour)
 	license.Status = "active"
 	license.MachineID = &req.FingerPrint

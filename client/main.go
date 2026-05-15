@@ -21,9 +21,9 @@ func main() {
 	// Create an instance of the app structure
 	s := &state.AppState{}
 	store, err := store.NewStore()
-	app := NewApp(s, store)
 	license := license.NewLicense(s, store)
 	auth := auth.NewAuth(s, store)
+	app := NewApp(s, store, license)
 
 	if err != nil {
 		log.Fatal("failed to initialize db")

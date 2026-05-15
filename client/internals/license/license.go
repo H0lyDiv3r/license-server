@@ -119,16 +119,17 @@ func (l *License) ActivateLicense(key string) error {
 	return nil
 }
 
-func (l *License) DecodeLicense(license string) *domain.LicenseClaims {
+func (l *License) DecodeLicense(license domain.License) (*domain.LicenseClaims, error) {
 
 	pkey, err := hex.DecodeString(publicKey)
 	if err != nil {
-		fmt.Println("cant read pubkey", err)
-		return &domain.LicenseClaims{}
+		l.state.ValidLicense = false
+		return nil, fmt.Errorf("malformed public Key: %w", err)
 	}
 	pubKey := ed25519.PublicKey(pkey)
-	token, err := jwt.ParseWithClaims(license, &domain.LicenseClaims{}, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(license.LicenseString, &domain.LicenseClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodEd25519); !ok {
+			l.state.ValidLicense = false
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return pubKey, nil
@@ -137,51 +138,16 @@ func (l *License) DecodeLicense(license string) *domain.LicenseClaims {
 	)
 
 	if err != nil {
-		fmt.Println("issue here", err)
+		l.state.ValidLicense = false
+		return nil, fmt.Errorf("malformed public Key: %w", err)
 	}
 
 	claims, ok := token.Claims.(*domain.LicenseClaims)
 	if !ok {
-		fmt.Println("another issue here", err)
+		l.state.ValidLicense = false
+		return nil, fmt.Errorf("cant parse claims: %w", err)
 	}
-	fmt.Println("claims", claims)
-
-	return claims
+	fmt.Println("i made it here dor some reason", claims)
+	l.state.ValidLicense = true
+	return claims, nil
 }
-
-// func (h *LicenseHandler) DecodeLicense(w http.ResponseWriter, r *http.Request) {
-// 	var req domain.DecodeRequest
-// 	json.NewDecoder(r.Body).Decode(&req)
-
-// 	publickey, err := hex.DecodeString(publicKey)
-
-// 	pubKey := ed25519.PublicKey(publickey)
-// 	token, err := jwt.ParseWithClaims(req.License, &domain.LicenseClaims{}, func(t *jwt.Token) (interface{}, error) {
-// 		// explicitly reject any algorithm that isn't EdDSA
-// 		// this prevents algorithm switching attacks
-// 		if _, ok := t.Method.(*jwt.SigningMethodEd25519); !ok {
-// 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-// 		}
-// 		return pubKey, nil
-// 	},
-// 		// we handle expiry ourselves using trusted time
-// 		// so we tell jwt not to validate it
-// 		jwt.WithoutClaimsValidation(),
-// 	)
-
-// 	if err != nil {
-// 		fmt.Println("issue here", err)
-// 	}
-
-// 	claims, ok := token.Claims.(*domain.LicenseClaims)
-// 	if !ok {
-// 		fmt.Println("issue here", err)
-// 	}
-
-// 	usr, _ := h.UserService.GetUser(r.Context(), int(claims.UserID))
-
-// 	fmt.Println("claims returned", usr)
-
-// 	w.Write([]byte("done"))
-
-// }

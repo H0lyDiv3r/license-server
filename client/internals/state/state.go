@@ -1,5 +1,6 @@
 package state
 
 type AppState struct {
-	AuthToken string
+	AuthToken    string `json:"authToken"`
+	ValidLicense bool   `json:"validLicense"`
 }

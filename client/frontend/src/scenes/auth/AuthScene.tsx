@@ -12,6 +12,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Signin, Signup } from "../../../wailsjs/go/auth/Auth";
+import { GetState } from "../../../wailsjs/go/main/App";
 
 type AuthMode = "signin" | "signup";
 type cred = {
@@ -22,7 +23,7 @@ type cred = {
 export function AuthScene({
   handleNav,
 }: {
-  handleNav: (p: "auth" | "app" | "payment") => void;
+  handleNav: (p: "auth" | "app" | "payment" | "subscription") => void;
 }) {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +42,12 @@ export function AuthScene({
         await Signup({ email, password });
       }
 
-      handleNav("app");
+      const state = await GetState();
+      if (state.validLicense) {
+        handleNav("app");
+      } else {
+        handleNav("subscription");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     }

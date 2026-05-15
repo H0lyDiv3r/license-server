@@ -74,3 +74,13 @@ func (s *Store) UpdateLicense(ctx context.Context, license domain.License) (*dom
 
 	return &license, nil
 }
+
+func (s *Store) GetLicense(ctx context.Context) (*domain.License, error) {
+
+	license, err := gorm.G[domain.License](s.Db).Where("status = ?", "active").First(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("license with key %s doesnt exist: %w", err)
+	}
+	return &license, nil
+
+}

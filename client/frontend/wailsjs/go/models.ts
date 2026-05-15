@@ -143,3 +143,22 @@ export namespace domain {
 
 }
 
+export namespace state {
+	
+	export class AppState {
+	    authToken: string;
+	    validLicense: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.authToken = source["authToken"];
+	        this.validLicense = source["validLicense"];
+	    }
+	}
+
+}
+

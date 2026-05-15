@@ -5,7 +5,7 @@ import {context} from '../models';
 
 export function ActivateLicense(arg1:string):Promise<void>;
 
-export function DecodeLicense(arg1:string):Promise<domain.LicenseClaims>;
+export function DecodeLicense(arg1:domain.License):Promise<domain.LicenseClaims>;
 
 export function GenerateLicense(arg1:domain.GenerateKeyRequest):Promise<domain.License>;
 

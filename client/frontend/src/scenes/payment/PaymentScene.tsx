@@ -57,7 +57,7 @@ export function PaymentScene({
   };
 
   const handleConfirmPayment = () => {
-    GenerateLicense()
+    GenerateLicense({ duration: plan.duration })
       .then((res) => {
         setShowConfirmModal(false);
         setShowKeyModal(true);
@@ -72,14 +72,12 @@ export function PaymentScene({
   const handleActivateLicense = () => {
     ActivateLicense(subscriptionKey)
       .then((res) => {
-        console.log("response", res);
+        setShowKeyModal(false);
+        onBack();
       })
       .catch((err) => {
         console.log("error", err);
       });
-
-    // setShowKeyModal(false);
-    // onBack();
   };
 
   return (

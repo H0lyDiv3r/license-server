@@ -18,6 +18,7 @@ export type Plan = {
   features: readonly string[];
   cta: string;
   featured?: boolean;
+  duration: number;
 };
 
 export const plans: readonly Plan[] = [
@@ -28,6 +29,7 @@ export const plans: readonly Plan[] = [
     description: "Flexible access for trying the app or short-term use.",
     features: ["Full access", "Cancel anytime", "Email support"],
     cta: "Choose Monthly",
+    duration: 30,
   },
   {
     name: "6 Months",
@@ -37,6 +39,7 @@ export const plans: readonly Plan[] = [
     features: ["Full access", "Priority support", "Best value"],
     cta: "Choose 6 Months",
     featured: true,
+    duration: 180,
   },
   {
     name: "1 Year",
@@ -45,6 +48,7 @@ export const plans: readonly Plan[] = [
     description: "Best value for long-term access and stability.",
     features: ["Full access", "Priority support", "Lowest monthly cost"],
     cta: "Choose Yearly",
+    duration: 365,
   },
 ];
 
@@ -111,7 +115,10 @@ export function SubscriptionScene({
 
                   <ul className="space-y-3 text-sm text-muted-foreground">
                     {plan.features.map((feature) => (
-                      <li key={feature} className="my-7 flex items-center gap-3">
+                      <li
+                        key={feature}
+                        className="my-7 flex items-center gap-3"
+                      >
                         <span className="flex size-5 items-center justify-center rounded-full bg-black text-white">
                           <CheckIcon className="size-3.5" />
                         </span>

@@ -9,7 +9,7 @@ import (
 )
 
 type LicenseRepository interface {
-	StoreKey(ctx context.Context, key string) (domain.License, error)
+	StoreKey(ctx context.Context, req domain.StoreKeyReq) (domain.License, error)
 	GetLicenseById(ctx context.Context, id string) (domain.License, error)
 	GetLicenseByKey(ctx context.Context, key string) (*domain.License, error)
 	UpdateLicense(ctx context.Context, license domain.License) (domain.License, error)
@@ -23,7 +23,7 @@ func NewLicenseRepository(db *gorm.DB) LicenseRepository {
 	return &licenseRepository{db: db}
 }
 
-func (l *licenseRepository) StoreKey(ctx context.Context, key string) (domain.License, error) {
+func (l *licenseRepository) StoreKey(ctx context.Context, req domain.StoreKeyReq) (domain.License, error) {
 	usr := ctx.Value("user").(domain.UserPayload)
 
 	existing, err := gorm.G[domain.License](l.db).Where("user_id = ?", usr.UserId).First(ctx)
@@ -34,9 +34,10 @@ func (l *licenseRepository) StoreKey(ctx context.Context, key string) (domain.Li
 	}
 
 	license := &domain.License{
-		Key:    key,
-		UserID: uint(usr.UserId),
-		Status: "pending",
+		Key:      req.Key,
+		Duration: req.Duration,
+		UserID:   uint(usr.UserId),
+		Status:   "pending",
 	}
 
 	err = gorm.G[domain.License](l.db).Create(ctx, license)
@@ -68,10 +69,7 @@ func (l *licenseRepository) GetLicenseByKey(ctx context.Context, key string) (*d
 
 func (l *licenseRepository) UpdateLicense(ctx context.Context, license domain.License) (domain.License, error) {
 
-	_, err := gorm.G[domain.License](l.db).Updates(ctx, domain.License{
-		MachineID: license.MachineID,
-		Status:    *license.MachineID,
-	})
+	_, err := gorm.G[domain.License](l.db).Where("key = ?", license.Key).Updates(ctx, license)
 
 	if err != nil {
 		return license, fmt.Errorf("failed to update license: %s", err.Error())

@@ -1,11 +1,24 @@
 export namespace domain {
 	
+	export class GenerateKeyRequest {
+	    duration: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new GenerateKeyRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.duration = source["duration"];
+	    }
+	}
 	export class License {
 	    ID: number;
 	    Key: string;
 	    LicenseString: string;
 	    MachineID?: string;
 	    Status: string;
+	    Duration: number;
 	    // Go type: time
 	    IssuedAt: any;
 	    // Go type: time
@@ -24,6 +37,7 @@ export namespace domain {
 	        this.LicenseString = source["LicenseString"];
 	        this.MachineID = source["MachineID"];
 	        this.Status = source["Status"];
+	        this.Duration = source["Duration"];
 	        this.IssuedAt = this.convertValues(source["IssuedAt"], null);
 	        this.ExpiresAt = this.convertValues(source["ExpiresAt"], null);
 	        this.RenewedAt = this.convertValues(source["RenewedAt"], null);

@@ -25,9 +25,13 @@ func NewLicenseHandler(licenseService service.LicenseService, userService servic
 
 func (h *LicenseHandler) GenerateLicense(w http.ResponseWriter, r *http.Request) {
 
-	license, err := h.LicenseService.GenerateKey(r.Context())
+	var req domain.GenerateKeyRequest
+	json.NewDecoder(r.Body).Decode(&req)
+
+	license, err := h.LicenseService.GenerateKey(r.Context(), req)
 	if err != nil {
 		http.Error(w, fmt.Errorf("error generating key: %s ", err.Error()).Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -40,16 +44,15 @@ func (h *LicenseHandler) ActivateLicense(w http.ResponseWriter, r *http.Request)
 	var req domain.ActivateLicenseRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	token, err := h.LicenseService.ActivateLicense(r.Context(), req)
+	license, err := h.LicenseService.ActivateLicense(r.Context(), req)
 	if err != nil {
 		http.Error(w, fmt.Errorf("failed to generate a token: %s", err.Error()).Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(struct {
-		Token string `json:"token"`
-	}{Token: token})
+	json.NewEncoder(w).Encode(license)
 
 }
 

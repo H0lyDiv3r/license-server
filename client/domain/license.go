@@ -29,6 +29,7 @@ type License struct {
 	LicenseString string        `gorm:"uniqueIndex; not null"`
 	MachineID     *string       `gorm:"uniqueIndex"`
 	Status        LicenseStatus `gorm: "default:'pending'"`
+	Duration      uint
 	IssuedAt      time.Time
 	ExpiresAt     time.Time
 	RenewedAt     *time.Time
@@ -50,4 +51,8 @@ type GenerateKeyResponse struct {
 type ActivateLicenseRequest struct {
 	FingerPrint string `json:"fingerPrint"`
 	LicenseKey  string `json:"licenseKey"`
+}
+
+type GenerateKeyRequest struct {
+	Duration uint `json:"duration"`
 }

@@ -23,6 +23,7 @@ func (h *UserHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
@@ -39,6 +40,7 @@ func (h *UserHandler) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := h.service.Signin(r.Context(), &req)
 	if err != nil {
 		http.Error(w, "failed to login", http.StatusInternalServerError)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)

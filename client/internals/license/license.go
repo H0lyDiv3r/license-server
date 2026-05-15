@@ -33,8 +33,12 @@ func (l *License) Startup(ctx context.Context) {
 	l.ctx = ctx
 }
 
-func (l *License) GenerateLicense() (*domain.License, error) {
-	req, err := http.NewRequest("POST", "http://localhost:3000/license/generate", nil)
+func (l *License) GenerateLicense(Duration domain.GenerateKeyRequest) (*domain.License, error) {
+	r, err := json.Marshal(Duration)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", "http://localhost:3000/license/generate", bytes.NewReader(r))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -98,7 +102,8 @@ func (l *License) ActivateLicense(key string) error {
 	}
 
 	var response struct {
-		Token string `json:"token"`
+		License domain.License
+		Token   string `json:"token"`
 	}
 
 	err = json.NewDecoder(res.Body).Decode(&response)

@@ -10,8 +10,8 @@ export function DecodeLicense(arg1) {
   return window['go']['license']['License']['DecodeLicense'](arg1);
 }
 
-export function GenerateLicense() {
-  return window['go']['license']['License']['GenerateLicense']();
+export function GenerateLicense(arg1) {
+  return window['go']['license']['License']['GenerateLicense'](arg1);
 }
 
 export function Startup(arg1) {

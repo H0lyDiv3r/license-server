@@ -1,12 +1,15 @@
 package main
 
 import (
+	"client/domain"
 	"client/internals/license"
 	"client/internals/state"
 	"client/internals/store"
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/denisbrodbeck/machineid"
 )
 
 const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
@@ -59,17 +62,49 @@ func (a *App) CheckLicense() error {
 	fmt.Println("claims", parsedLicense)
 	fmt.Println("this is the time now", time.Now().Before(license.ExpiresAt))
 
-	// we are still trusting the user at this point
-	// if healthy: check expiry. if expired send to auth and force license renewal
-	// check if expiry date is bigger than date now, expiry
-	// check if time now is bigger than issuedAt; if it is smaller it means user rolled back time.
+	err = a.CheckDeviceFingerPrint(parsedLicense)
+	if err != nil {
+		// emit an error
+		a.state.ValidLicense = false
+	}
 
-	if time.Now().After(parsedLicense.ExpiresAt.Time) || time.Now().Before(parsedLicense.IssuedAt.Time) {
-
-		fmt.Println("this license is so expired man", time.Now().After(parsedLicense.ExpiresAt.Time))
-		fmt.Println("somebody rolled back time", time.Now().Before(parsedLicense.IssuedAt.Time))
+	err = a.CheckLicenseTime(parsedLicense)
+	if err != nil {
+		// emit an error
 		a.state.ValidLicense = false
 	}
 
 	return nil
 }
+
+func (a *App) CheckDeviceFingerPrint(parsedLicense *domain.LicenseClaims) error {
+
+	machineID, err := machineid.ProtectedID("secure_desktop")
+	if err != nil || machineID != parsedLicense.MachineID {
+		return fmt.Errorf("machine finger print doesnt match the one stored in license: %w", err)
+	}
+	return nil
+}
+
+func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
+
+	// we are still trusting the user at this point
+	// if healthy: check expiry. if expired send to auth and force license renewal
+	// check if expiry date is bigger than date now, expiry
+	if time.Now().After(parsedLicense.ExpiresAt.Time) {
+		return fmt.Errorf("license is expired. you need to renew it.")
+	}
+
+	// check if time now is bigger than issuedAt; if it is smaller it means user rolled back time.
+	if time.Now().Before(parsedLicense.IssuedAt.Time) {
+		return fmt.Errorf("your system clock and the app clock are out of sync")
+	}
+
+	return nil
+}
+
+// need to add time journaling
+// on startup check os time.
+// keep monotonic time
+// on shutdown write the time to journal.
+// on next startup. check time agains issued at + latest journal entry.

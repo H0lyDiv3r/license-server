@@ -6,6 +6,7 @@ import {
 import { PaymentScene } from "@/scenes/payment/PaymentScene";
 import { useEffect, useState } from "react";
 import { GetState, CheckLicense } from "../wailsjs/go/main/App";
+import { MainPage } from "./scenes/main/MainPage";
 
 function App() {
   const [page, setPage] = useState<
@@ -45,7 +46,7 @@ function App() {
     case "auth":
       return <AuthScene handleNav={(p) => navigate(p)} />;
     case "app":
-      return <>main app</>;
+      return <MainPage />;
     case "subscription":
       return (
         <SubscriptionScene

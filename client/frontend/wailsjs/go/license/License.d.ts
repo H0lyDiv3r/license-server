@@ -9,4 +9,8 @@ export function DecodeLicense(arg1:domain.License):Promise<domain.LicenseClaims>
 
 export function GenerateLicense(arg1:domain.GenerateKeyRequest):Promise<domain.License>;
 
+export function InitializeJournal():Promise<void>;
+
 export function Startup(arg1:context.Context):Promise<void>;
+
+export function WriteJournalEntry(arg1:string,arg2:number):Promise<void>;

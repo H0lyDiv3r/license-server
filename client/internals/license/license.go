@@ -5,6 +5,7 @@ import (
 	"client/domain"
 	"client/internals/state"
 	"client/internals/store"
+	"client/pkg/utils"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -12,6 +13,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/golang-jwt/jwt/v5"
@@ -23,7 +28,9 @@ type License struct {
 	store *store.Store
 }
 
-const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
+const (
+	publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
+)
 
 func NewLicense(state *state.AppState, store *store.Store) *License {
 	return &License{state: state, store: store}
@@ -111,10 +118,16 @@ func (l *License) ActivateLicense(key string) error {
 		return fmt.Errorf("failed to parse response body", err)
 	}
 
+	// create journal file
+	err = l.InitializeJournal()
+	if err != nil {
+		return fmt.Errorf("failed to initialize journal: %w", err)
+	}
+
 	fmt.Println("token generated", response)
 	_, err = l.store.UpdateLicense(l.ctx, domain.License{MachineID: &machineID, LicenseString: response.Token, Status: "active", Key: key})
 	if err != nil {
-		fmt.Println("updating issue", err)
+		fmt.Errorf("updating issue: %w", err)
 	}
 	return nil
 }
@@ -150,4 +163,37 @@ func (l *License) DecodeLicense(license domain.License) (*domain.LicenseClaims, 
 	fmt.Println("i made it here dor some reason", claims)
 	l.state.ValidLicense = true
 	return claims, nil
+}
+
+func (l *License) WriteJournalEntry(secret string, timeStamp int64) {
+	// hmacString := utils.GenerateHmac(hmacSecret, string(timeStamp))
+	fmt.Println("time now,", time.Now().Unix())
+}
+
+func (l *License) InitializeJournal() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to create journal file: %w", err)
+	}
+
+	dir := filepath.Join(home, ".config", "secure_desktop")
+	journalPath := filepath.Join(dir, "journal.json")
+
+	lastSeen := time.Now().Unix()
+	lastSeenStr := strconv.FormatInt(lastSeen, 10)
+	entry := domain.JournalEntry{
+		LastSeen: string(lastSeenStr),
+		Hmac:     utils.GenerateHmac(domain.HmacSecret, string(lastSeenStr)),
+	}
+
+	JournalEntry, err := json.Marshal(entry)
+	if err != nil {
+		return fmt.Errorf("failed to compose journal entry: %w", err)
+	}
+
+	if err := os.WriteFile(journalPath, JournalEntry, 0600); err != nil {
+		return fmt.Errorf("failed to write journal entry: %w", err)
+	}
+
+	return nil
 }

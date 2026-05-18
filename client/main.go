@@ -43,6 +43,9 @@ func main() {
 			license.Startup(ctx)
 			auth.Startup(ctx)
 		},
+		OnShutdown: func(ctx context.Context) {
+			app.OnShutDown()
+		},
 		Bind: []interface{}{
 			app,
 			license,

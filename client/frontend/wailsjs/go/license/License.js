@@ -21,7 +21,3 @@ export function InitializeJournal() {
 export function Startup(arg1) {
   return window['go']['license']['License']['Startup'](arg1);
 }
-
-export function WriteJournalEntry(arg1, arg2) {
-  return window['go']['license']['License']['WriteJournalEntry'](arg1, arg2);
-}

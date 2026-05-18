@@ -12,5 +12,3 @@ export function GenerateLicense(arg1:domain.GenerateKeyRequest):Promise<domain.L
 export function InitializeJournal():Promise<void>;
 
 export function Startup(arg1:context.Context):Promise<void>;
-
-export function WriteJournalEntry(arg1:string,arg2:number):Promise<void>;

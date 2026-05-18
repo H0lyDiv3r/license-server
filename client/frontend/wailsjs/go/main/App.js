@@ -21,3 +21,7 @@ export function GetState() {
 export function IsLoggedIn() {
   return window['go']['main']['App']['IsLoggedIn']();
 }
+
+export function OnShutDown() {
+  return window['go']['main']['App']['OnShutDown']();
+}

@@ -12,3 +12,5 @@ export function CheckLicenseTime(arg1:domain.LicenseClaims):Promise<void>;
 export function GetState():Promise<state.AppState>;
 
 export function IsLoggedIn():Promise<boolean>;
+
+export function OnShutDown():Promise<void>;

@@ -13,8 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -165,34 +163,14 @@ func (l *License) DecodeLicense(license domain.License) (*domain.LicenseClaims, 
 	return claims, nil
 }
 
-func (l *License) WriteJournalEntry(secret string, timeStamp int64) {
-	// hmacString := utils.GenerateHmac(hmacSecret, string(timeStamp))
-	fmt.Println("time now,", time.Now().Unix())
-}
-
 func (l *License) InitializeJournal() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to create journal file: %w", err)
-	}
-
-	dir := filepath.Join(home, ".config", "secure_desktop")
-	journalPath := filepath.Join(dir, "journal.json")
 
 	lastSeen := time.Now().Unix()
 	lastSeenStr := strconv.FormatInt(lastSeen, 10)
-	entry := domain.JournalEntry{
-		LastSeen: string(lastSeenStr),
-		Hmac:     utils.GenerateHmac(domain.HmacSecret, string(lastSeenStr)),
-	}
 
-	JournalEntry, err := json.Marshal(entry)
+	err := utils.WriteJournalEntry(domain.HmacSecret, lastSeenStr)
 	if err != nil {
-		return fmt.Errorf("failed to compose journal entry: %w", err)
-	}
-
-	if err := os.WriteFile(journalPath, JournalEntry, 0600); err != nil {
-		return fmt.Errorf("failed to write journal entry: %w", err)
+		return fmt.Errorf("failed to write journal entry: %w")
 	}
 
 	return nil

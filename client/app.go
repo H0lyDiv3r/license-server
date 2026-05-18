@@ -5,8 +5,13 @@ import (
 	"client/internals/license"
 	"client/internals/state"
 	"client/internals/store"
+	"client/pkg/utils"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/denisbrodbeck/machineid"
@@ -88,7 +93,37 @@ func (a *App) CheckDeviceFingerPrint(parsedLicense *domain.LicenseClaims) error 
 
 func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
 
-	// we are still trusting the user at this point
+	// at this point we shouldnt really trus the users os time. since it can easily be manipulated
+	// we will check if time has been altered by checking last enty journal and os time. take the later CheckLicenseTime
+	// open journal
+	journalPath, err := utils.GetJournalPath()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.ReadFile(journalPath)
+	if err != nil {
+		return fmt.Errorf("journal doesnt exist or is corrupted: %w", err)
+	}
+
+	var parsedEntry domain.JournalEntry
+	if err := json.Unmarshal(file, &parsedEntry); err != nil {
+		return fmt.Errorf("journal doesnt exist or is corrupted: %w", err)
+	}
+	lastSeenDateInt, err := strconv.ParseInt(parsedEntry.LastSeen, 10, 64)
+
+	// read journal produce hmac for the lastSeen value and see if it has been tampered with
+	producedHmac := utils.GenerateHmac(domain.HmacSecret, parsedEntry.LastSeen)
+	if producedHmac != parsedEntry.Hmac || err != nil {
+		return fmt.Errorf("journal entry has been tampered with or is corrupted")
+	}
+
+	// if journal entry is not corrupt compare the last seen date with os date and take the latest of the two
+	lastSeenDate := time.Unix(int64(lastSeenDateInt), 0)
+	if time.Now().Before(lastSeenDate) {
+		return fmt.Errorf("time rollback detected. user clock and journal entry dont add up")
+	}
+
 	// if healthy: check expiry. if expired send to auth and force license renewal
 	// check if expiry date is bigger than date now, expiry
 	if time.Now().After(parsedLicense.ExpiresAt.Time) {
@@ -103,8 +138,12 @@ func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
 	return nil
 }
 
-// need to add time journaling
-// on startup check os time.
-// keep monotonic time
-// on shutdown write the time to journal.
-// on next startup. check time agains issued at + latest journal entry.
+func (a *App) OnShutDown() {
+	lastSeen := time.Now().Unix()
+	lastSeenStr := strconv.FormatInt(lastSeen, 10)
+
+	err := utils.WriteJournalEntry(domain.HmacSecret, lastSeenStr)
+	if err != nil {
+		log.Println("shutting down with grace")
+	}
+}

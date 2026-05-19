@@ -21,10 +21,12 @@ const publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db0
 
 // App struct
 type App struct {
-	ctx     context.Context
-	state   *state.AppState
-	store   *store.Store
-	license *license.License
+	ctx       context.Context
+	state     *state.AppState
+	store     *store.Store
+	license   *license.License
+	startTime time.Time
+	lastSeen  time.Time
 }
 
 // NewApp creates a new App application struct
@@ -34,6 +36,8 @@ func NewApp(state *state.AppState, store *store.Store, license *license.License)
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	a.startTime = time.Now()
 	a.CheckLicense()
 }
 
@@ -120,6 +124,7 @@ func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
 
 	// if journal entry is not corrupt compare the last seen date with os date and take the latest of the two
 	lastSeenDate := time.Unix(int64(lastSeenDateInt), 0)
+	a.lastSeen = lastSeenDate
 	if time.Now().Before(lastSeenDate) {
 		return fmt.Errorf("time rollback detected. user clock and journal entry dont add up")
 	}
@@ -139,7 +144,20 @@ func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
 }
 
 func (a *App) OnShutDown() {
-	lastSeen := time.Now().Unix()
+
+	var trustedTime time.Time
+	// in the case of time rollback
+	// check if journal time is ahead of current startTime
+	// if time has been rolled back use journal time, else use os time
+	// store truested time. ie startTime + elapsed time so that time can only go foreward
+
+	if a.startTime.Before(a.lastSeen) {
+		trustedTime = a.lastSeen.Add(time.Since(a.startTime))
+	} else {
+		trustedTime = a.startTime.Add(time.Since(a.startTime))
+	}
+
+	lastSeen := trustedTime.Unix()
 	lastSeenStr := strconv.FormatInt(lastSeen, 10)
 
 	err := utils.WriteJournalEntry(domain.HmacSecret, lastSeenStr)

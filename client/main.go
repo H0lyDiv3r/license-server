@@ -2,6 +2,7 @@ package main
 
 import (
 	"client/internals/auth"
+	"client/internals/journal"
 	"client/internals/license"
 	"client/internals/state"
 	"client/internals/store"
@@ -21,9 +22,10 @@ func main() {
 	// Create an instance of the app structure
 	s := &state.AppState{}
 	store, err := store.NewStore()
-	license := license.NewLicense(s, store)
+	j := journal.New()
+	license := license.NewLicense(s, store, j)
 	auth := auth.NewAuth(s, store)
-	app := NewApp(s, store, license)
+	app := NewApp(s, store, license, j)
 
 	if err != nil {
 		log.Fatal("failed to initialize db")

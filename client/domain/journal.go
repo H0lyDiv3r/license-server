@@ -2,6 +2,7 @@ package domain
 
 type JournalEntry struct {
 	LastSeen string `json:"last_seen"`
+	Tampered bool   `json:"tampered"`
 	Hmac     string `json:"hmac"`
 }
 

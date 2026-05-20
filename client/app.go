@@ -2,15 +2,13 @@ package main
 
 import (
 	"client/domain"
+	"client/internals/journal"
 	"client/internals/license"
 	"client/internals/state"
 	"client/internals/store"
-	"client/pkg/utils"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -27,18 +25,23 @@ type App struct {
 	license   *license.License
 	startTime time.Time
 	lastSeen  time.Time
+	journal   *journal.Journal
 }
 
 // NewApp creates a new App application struct
-func NewApp(state *state.AppState, store *store.Store, license *license.License) *App {
-	return &App{state: state, store: store, license: license}
+func NewApp(state *state.AppState, store *store.Store, license *license.License, journal *journal.Journal) *App {
+	return &App{state: state, store: store, license: license, journal: journal}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	a.startTime = time.Now()
-	a.CheckLicense()
+	err := a.CheckLicense()
+	if err != nil {
+		fmt.Println("license has been messed with so user needs to renew")
+		a.state.ValidLicense = false
+	}
 }
 
 func (a *App) IsLoggedIn() bool {
@@ -53,6 +56,21 @@ func (a *App) GetState() *state.AppState {
 }
 
 func (a *App) CheckLicense() error {
+
+	err := a.journal.Read()
+	if err != nil {
+		return err
+	}
+
+	lastSeenDateInt, err := strconv.ParseInt(a.journal.Entry().LastSeen, 10, 64)
+	if err == nil {
+		a.lastSeen = time.Unix(lastSeenDateInt, 0)
+	}
+
+	if a.journal.Entry().Tampered {
+		return fmt.Errorf("license has been tampered with. you need to renew license")
+	}
+
 	// fetch license
 	license, err := a.store.GetLicense(a.ctx)
 
@@ -67,20 +85,25 @@ func (a *App) CheckLicense() error {
 	if err != nil {
 		return fmt.Errorf("license cant be decoded: %w", err)
 	}
-	fmt.Println("here is license", license)
-	fmt.Println("claims", parsedLicense)
-	fmt.Println("this is the time now", time.Now().Before(license.ExpiresAt))
 
 	err = a.CheckDeviceFingerPrint(parsedLicense)
 	if err != nil {
-		// emit an error
-		a.state.ValidLicense = false
+
+		timeStr := strconv.FormatInt(time.Now().Unix(), 10)
+		a.journal.Write(timeStr, true)
+		return err
 	}
 
 	err = a.CheckLicenseTime(parsedLicense)
 	if err != nil {
-		// emit an error
-		a.state.ValidLicense = false
+
+		fmt.Println("HERE WE ARE AN ERROR. TIME HAS BEEN ROLLED BACK: %w", err)
+		timeStr := strconv.FormatInt(time.Now().Unix(), 10)
+		err := a.journal.Write(timeStr, true)
+		if err != nil {
+			fmt.Println("there is an error writing journal")
+		}
+		return err
 	}
 
 	return nil
@@ -97,29 +120,9 @@ func (a *App) CheckDeviceFingerPrint(parsedLicense *domain.LicenseClaims) error 
 
 func (a *App) CheckLicenseTime(parsedLicense *domain.LicenseClaims) error {
 
-	// at this point we shouldnt really trus the users os time. since it can easily be manipulated
-	// we will check if time has been altered by checking last enty journal and os time. take the later CheckLicenseTime
-	// open journal
-	journalPath, err := utils.GetJournalPath()
+	lastSeenDateInt, err := strconv.ParseInt(a.journal.Entry().LastSeen, 10, 64)
 	if err != nil {
-		return err
-	}
-
-	file, err := os.ReadFile(journalPath)
-	if err != nil {
-		return fmt.Errorf("journal doesnt exist or is corrupted: %w", err)
-	}
-
-	var parsedEntry domain.JournalEntry
-	if err := json.Unmarshal(file, &parsedEntry); err != nil {
-		return fmt.Errorf("journal doesnt exist or is corrupted: %w", err)
-	}
-	lastSeenDateInt, err := strconv.ParseInt(parsedEntry.LastSeen, 10, 64)
-
-	// read journal produce hmac for the lastSeen value and see if it has been tampered with
-	producedHmac := utils.GenerateHmac(domain.HmacSecret, parsedEntry.LastSeen)
-	if producedHmac != parsedEntry.Hmac || err != nil {
-		return fmt.Errorf("journal entry has been tampered with or is corrupted")
+		return fmt.Errorf("last seen value is not readable: %w", err)
 	}
 
 	// if journal entry is not corrupt compare the last seen date with os date and take the latest of the two
@@ -160,7 +163,7 @@ func (a *App) OnShutDown() {
 	lastSeen := trustedTime.Unix()
 	lastSeenStr := strconv.FormatInt(lastSeen, 10)
 
-	err := utils.WriteJournalEntry(domain.HmacSecret, lastSeenStr)
+	err := a.journal.Write(lastSeenStr, a.journal.Entry().Tampered)
 	if err != nil {
 		log.Println("shutting down with grace")
 	}

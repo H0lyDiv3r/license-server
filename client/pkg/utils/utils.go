@@ -22,7 +22,7 @@ func GenerateHmac(secret string, payload string) string {
 	return hmacString
 }
 
-func WriteJournalEntry(secret string, timestamp string) error {
+func WriteJournalEntry(secret string, timestamp string, tamper bool) error {
 
 	journalPath, err := GetJournalPath()
 	if err != nil {
@@ -31,7 +31,8 @@ func WriteJournalEntry(secret string, timestamp string) error {
 
 	entry := domain.JournalEntry{
 		LastSeen: timestamp,
-		Hmac:     GenerateHmac(secret, timestamp),
+		Tampered: tamper,
+		Hmac:     GenerateHmac(secret, fmt.Sprintf("%s:%v", timestamp, tamper)),
 	}
 
 	JournalEntry, err := json.Marshal(entry)

@@ -3,9 +3,9 @@ package license
 import (
 	"bytes"
 	"client/domain"
+	"client/internals/journal"
 	"client/internals/state"
 	"client/internals/store"
-	"client/pkg/utils"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -21,17 +21,18 @@ import (
 )
 
 type License struct {
-	ctx   context.Context
-	state *state.AppState
-	store *store.Store
+	ctx     context.Context
+	state   *state.AppState
+	store   *store.Store
+	journal *journal.Journal
 }
 
 const (
 	publicKey = "0ddc979bbf017e8627161321a0e193d90865d119a8fe87e62854aa32c4db017b"
 )
 
-func NewLicense(state *state.AppState, store *store.Store) *License {
-	return &License{state: state, store: store}
+func NewLicense(state *state.AppState, store *store.Store, journal *journal.Journal) *License {
+	return &License{state: state, store: store, journal: journal}
 }
 
 func (l *License) Startup(ctx context.Context) {
@@ -168,7 +169,7 @@ func (l *License) InitializeJournal() error {
 	lastSeen := time.Now().Unix()
 	lastSeenStr := strconv.FormatInt(lastSeen, 10)
 
-	err := utils.WriteJournalEntry(domain.HmacSecret, lastSeenStr)
+	err := l.journal.Write(lastSeenStr, false)
 	if err != nil {
 		return fmt.Errorf("failed to write journal entry: %w")
 	}

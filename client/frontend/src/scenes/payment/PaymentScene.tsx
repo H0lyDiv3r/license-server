@@ -11,6 +11,8 @@ import {
   ActivateLicense,
 } from "../../../wailsjs/go/license/License";
 
+import { CreateCheckout } from "../../../wailsjs/go/payment/Payment";
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-black/5 pb-3 last:border-b-0 last:pb-0">
@@ -57,16 +59,19 @@ export function PaymentScene({
   };
 
   const handleConfirmPayment = () => {
-    GenerateLicense({ duration: plan.duration })
-      .then((res) => {
-        setShowConfirmModal(false);
-        setShowKeyModal(true);
-        setSubscriptionKey(res.Key);
-        console.log("response", res);
-      })
-      .catch((err) => {
-        console.log("error", err);
-      });
+    CreateCheckout().then((res) => {
+      console.log("payment started", res);
+    });
+    // GenerateLicense({ duration: plan.duration })
+    //   .then((res) => {
+    //     setShowConfirmModal(false);
+    //     setShowKeyModal(true);
+    //     setSubscriptionKey(res.Key);
+    //     console.log("response", res);
+    //   })
+    //   .catch((err) => {
+    //     console.log("error", err);
+    //   });
   };
 
   const handleActivateLicense = () => {

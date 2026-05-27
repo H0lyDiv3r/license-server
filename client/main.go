@@ -4,6 +4,7 @@ import (
 	"client/internals/auth"
 	"client/internals/journal"
 	"client/internals/license"
+	"client/internals/payment"
 	"client/internals/state"
 	"client/internals/store"
 	"context"
@@ -25,6 +26,8 @@ func main() {
 	j := journal.New()
 	license := license.NewLicense(s, store, j)
 	auth := auth.NewAuth(s, store)
+
+	payment := payment.NewPayment(s)
 	app := NewApp(s, store, license, j)
 
 	if err != nil {
@@ -44,6 +47,7 @@ func main() {
 			app.startup(ctx)
 			license.Startup(ctx)
 			auth.Startup(ctx)
+			payment.Startup(ctx)
 		},
 		OnShutdown: func(ctx context.Context) {
 			app.OnShutDown()
@@ -52,6 +56,7 @@ func main() {
 			app,
 			license,
 			auth,
+			payment,
 		},
 	})
 

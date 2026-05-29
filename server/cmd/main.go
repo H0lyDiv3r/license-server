@@ -32,6 +32,9 @@ func main() {
 	payment.InitPayment()
 	r := chi.NewRouter()
 
+	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	fmt.Println("webook", webhookSecret)
+
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewHandler(userService)
@@ -47,6 +50,48 @@ func main() {
 		r.Post("/signin", userHandler.SigninHandler)
 		r.Post("/signup", userHandler.SignupHandler)
 	})
+	r.Post("/stripeWebhook", func(w http.ResponseWriter, r *http.Request) {
+
+		signature := r.Header.Get("Stripe-Signature")
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println("Error reading body:", err)
+			http.Error(w, "error reading body", http.StatusBadRequest)
+			return
+		}
+
+		fmt.Println("Signature:", signature)
+		fmt.Println("Body length:", len(body))
+
+		webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+		fmt.Println("Webhook secret loaded:", webhookSecret != "")
+
+		event, err := webhook.ConstructEventWithOptions(body, signature, webhookSecret, webhook.ConstructEventOptions{
+			IgnoreAPIVersionMismatch: true,
+		})
+		if err != nil {
+			fmt.Println("Signature verification failed:", err)
+			http.Error(w, "invalid signature", http.StatusBadRequest)
+			return
+		}
+
+		fmt.Println("Event type:", event.Type)
+
+		switch event.Type {
+		case "checkout.session.completed":
+			var session stripe.CheckoutSession
+			err := json.Unmarshal(event.Data.Raw, &session)
+			if err != nil {
+				fmt.Println("Error parsing session:", err)
+				http.Error(w, "error parsing session", http.StatusBadRequest)
+				return
+			}
+			fmt.Println("✓ Payment successful for session:", session.ID)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"ok"}`))
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTMiddleware)
@@ -58,46 +103,6 @@ func main() {
 
 		r.Route("/payment", func(r chi.Router) {
 			r.Post("/stripe", paymentHandler.CreateCheckout)
-			r.Post("/stripeWebhook", func(w http.ResponseWriter, r *http.Request) {
-
-				signature := r.Header.Get("stripe-signature")
-				body, err := io.ReadAll(r.Body)
-				if err != nil {
-					http.Error(w, "error reading body", http.StatusBadRequest)
-					return
-				}
-
-				// Verify the webhook signature
-				webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-				event, err := webhook.ConstructEvent(body, signature, webhookSecret)
-				if err != nil {
-					http.Error(w, "invalid signature", http.StatusBadRequest)
-					return
-				}
-
-				// Handle the event
-				switch event.Type {
-				case "checkout.session.completed":
-					var session stripe.CheckoutSession
-					err := json.Unmarshal(event.Data.Raw, &session)
-					if err != nil {
-						http.Error(w, "error parsing session", http.StatusBadRequest)
-						return
-					}
-
-					// Payment succeeded!
-					fmt.Println("Payment successful for session:", session.ID)
-					// TODO: Save to database, unlock features, etc.
-
-				case "checkout.session.async_payment_failed":
-					fmt.Println("Payment failed")
-					// TODO: Handle failure
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"status":"ok"}`))
-				fmt.Println("hello hello hello")
-			})
 		})
 	})
 

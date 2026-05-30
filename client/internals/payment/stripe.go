@@ -17,19 +17,19 @@ func NewStripe(ctx context.Context) Stripe {
 	return Stripe{ctx: ctx}
 }
 
-func (s *Stripe) CreateCheckout(token string) error {
+func (s *Stripe) CreateCheckout(token string) (string, error) {
 
 	req, err := http.NewRequest("POST", "http://localhost:3000/payment/stripe", nil)
 
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
+		return "", fmt.Errorf("request failed: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -37,9 +37,9 @@ func (s *Stripe) CreateCheckout(token string) error {
 		var errResp map[string]string
 		_ = json.NewDecoder(res.Body).Decode(&errResp)
 		if msg := errResp["error"]; msg != "" {
-			return errors.New(msg)
+			return "", errors.New(msg)
 		}
-		return fmt.Errorf("payment failed %w", res.Status)
+		return "", fmt.Errorf("payment failed %w", res.Status)
 	}
 
 	var result domain.StripeRes
@@ -47,5 +47,5 @@ func (s *Stripe) CreateCheckout(token string) error {
 
 	fmt.Println("payment success", result)
 
-	return nil
+	return result.Url, nil
 }

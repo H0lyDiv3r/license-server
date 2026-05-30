@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"license-server/internals/domain"
 	"license-server/internals/service"
 	"net/http"
 )
@@ -24,5 +26,5 @@ func (p *PaymentHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"url":"` + checkoutURL + `"}`))
+	json.NewEncoder(w).Encode(domain.CreateCheckoutResponse{Url: checkoutURL})
 }

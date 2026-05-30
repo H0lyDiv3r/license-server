@@ -6,6 +6,10 @@ export function CreateCheckout() {
   return window['go']['payment']['Payment']['CreateCheckout']();
 }
 
+export function OpenCheckoutBrowser(arg1) {
+  return window['go']['payment']['Payment']['OpenCheckoutBrowser'](arg1);
+}
+
 export function Startup(arg1) {
   return window['go']['payment']['Payment']['Startup'](arg1);
 }

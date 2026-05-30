@@ -12,6 +12,7 @@ import {
 } from "../../../wailsjs/go/license/License";
 
 import { CreateCheckout } from "../../../wailsjs/go/payment/Payment";
+import { CheckoutReadyModal } from "./CheckoutReadyModal";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -53,15 +54,23 @@ export function PaymentScene({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [subscriptionKey, setSubscriptionKey] = useState("");
+  const [payLink, setPayLink] = useState("");
+  const [showPaylink, setShowPayLink] = useState(false);
 
-  const handlePayClick = () => {
-    setShowConfirmModal(true);
+  const handlePayClick = async () => {
+    if (payLink) {
+      setShowPayLink(true);
+      return;
+    }
+    const checkoutLink = await CreateCheckout();
+    if (!checkoutLink) {
+      return;
+    }
+    setPayLink(checkoutLink);
+    setShowPayLink(true);
   };
 
-  const handleConfirmPayment = () => {
-    CreateCheckout().then((res) => {
-      console.log("payment started", res);
-    });
+  const handleConfirmPayment = async () => {
     // GenerateLicense({ duration: plan.duration })
     //   .then((res) => {
     //     setShowConfirmModal(false);
@@ -194,6 +203,13 @@ export function PaymentScene({
         <SubscriptionKeyModal
           subscriptionKey={subscriptionKey}
           onClose={handleActivateLicense}
+        />
+      )}
+
+      {showPaylink && (
+        <CheckoutReadyModal
+          onClose={() => setShowPayLink(false)}
+          url={payLink}
         />
       )}
     </div>

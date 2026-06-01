@@ -54,8 +54,10 @@ export const plans: readonly Plan[] = [
 
 export function SubscriptionScene({
   onSelectPlan,
+  onActivate,
 }: {
   onSelectPlan: (plan: Plan) => void;
+  onActivate?: () => void;
 }) {
   return (
     <div className="min-h-svh bg-[#f6f6f4] px-4 py-8">
@@ -150,6 +152,19 @@ export function SubscriptionScene({
             </Card>
           ))}
         </div>
+
+        {onActivate && (
+          <p className="text-center text-sm text-muted-foreground">
+            Already have a key?{" "}
+            <button
+              type="button"
+              onClick={onActivate}
+              className="font-medium text-foreground underline underline-offset-2 transition-colors hover:text-black/60"
+            >
+              Activate it here
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

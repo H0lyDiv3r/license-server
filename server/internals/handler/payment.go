@@ -18,7 +18,7 @@ func NewPaymentHandler(service service.PaymentService) PaymentHandler {
 }
 
 func (p *PaymentHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) {
-	checkoutURL, err := p.service.CreateCheckoutSession(2000, "fake_product")
+	checkoutURL, err := p.service.CreateCheckoutSession(r.Context(), 2000, "fake_product")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

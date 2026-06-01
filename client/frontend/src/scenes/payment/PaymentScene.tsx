@@ -13,6 +13,7 @@ import {
 
 import { CreateCheckout } from "../../../wailsjs/go/payment/Payment";
 import { CheckoutReadyModal } from "./CheckoutReadyModal";
+import { navigatePaths } from "@/types";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -46,10 +47,10 @@ function SummaryRow({
 
 export function PaymentScene({
   plan,
-  onBack,
+  navigate,
 }: {
   plan: Plan;
-  onBack: () => void;
+  navigate: (dest: navigatePaths) => void;
 }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -87,7 +88,7 @@ export function PaymentScene({
     ActivateLicense(subscriptionKey)
       .then((res) => {
         setShowKeyModal(false);
-        onBack();
+        navigate("app");
       })
       .catch((err) => {
         console.log("error", err);
@@ -99,7 +100,9 @@ export function PaymentScene({
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => {
+            navigate("app");
+          }}
           className="inline-flex w-fit items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeftIcon className="size-4" />
@@ -210,6 +213,9 @@ export function PaymentScene({
         <CheckoutReadyModal
           onClose={() => setShowPayLink(false)}
           url={payLink}
+          navigate={(dest) => {
+            navigate(dest);
+          }}
         />
       )}
     </div>

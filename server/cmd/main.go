@@ -1,12 +1,12 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base32"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"license-server/db"
+	"license-server/internals/domain"
 	"license-server/internals/handler"
 	"license-server/internals/middleware"
 	"license-server/internals/repository"
@@ -15,7 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
@@ -46,7 +46,8 @@ func main() {
 	licenseService := service.NewLicenseService(licenseRepo)
 	licenseHandler := handler.NewLicenseHandler(licenseService, userService)
 
-	paymentService := service.NewPaymentService()
+	paymentRepo := repository.NewpaymentRepository(db)
+	paymentService := service.NewPaymentService(paymentRepo)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
 
 	r.Route("/auth", func(r chi.Router) {
@@ -89,23 +90,61 @@ func main() {
 				http.Error(w, "error parsing session", http.StatusBadRequest)
 				return
 			}
-			fmt.Println("✓ Payment successful for session:", session.ID)
+			userId := session.Metadata["user_id"]
+			email := session.Metadata["user_email"]
+			duration, err := strconv.Atoi(session.Metadata["duration"])
+			if err != nil {
+				http.Error(w, "error cant read duration", http.StatusBadRequest)
+				return
+			}
+
+			uid, err := strconv.Atoi(userId)
+			if err != nil {
+				http.Error(w, "error cant read duration", http.StatusBadRequest)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), "user", domain.UserPayload{
+				UserId: float64(uid),
+				Email:  email,
+			})
+			// now that payment succeeded.
+			// generate the license key and store it
+			license, err := licenseService.GenerateKey(ctx, domain.GenerateKeyRequest{
+				Duration: uint(duration),
+			})
+			if err != nil {
+				http.Error(w, "error cant generate key"+err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			// need to store the payment session
+			payment := domain.SavePaymentRequest{
+				SessionId:     session.ID,
+				Amount:        uint(session.AmountSubtotal),
+				Currency:      string(session.Currency),
+				Email:         session.CustomerEmail,
+				Status:        string(session.Status),
+				PaymentMethod: "Card",
+				Metadata:      "",
+				LicenseId:     license.ID,
+				// UserId:        uint(uid),
+			}
+
+			pSes, err := paymentService.SavePaymentSession(r.Context(), payment)
+			if err != nil {
+				http.Error(w, "error cant generate key"+err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			fmt.Println("✓ Payment successful for session:", session, userId, email, pSes)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 	r.Get("/success", func(w http.ResponseWriter, r *http.Request) {
-		b := make([]byte, 10)
-
-		if _, err := rand.Read(b); err != nil {
-			// return nil, err
-		}
-
-		encoded := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)
-		encoded = strings.ToUpper(encoded)
-
-		key := encoded[0:4] + "-" + encoded[4:8] + "-" + encoded[8:12] + "-" + encoded[12:16]
+		fmt.Println("bad stuff happens in the bathroom", r.URL.Query())
 		// Get the session ID from the URL parameter
 		// TODO: Look up the session in your database to get the license key
 		// For now, just show a placeholder
@@ -220,7 +259,7 @@ func main() {
     <p>Your license key is below.</p>
 
     <div class="key-row">
-      <div class="key" id="licenseKey">` + key + `</div>
+      <div class="key" id="licenseKey">` + key + r.URL.RawQuery + `</div>
       <button id="copyBtn">Copy</button>
     </div>
 

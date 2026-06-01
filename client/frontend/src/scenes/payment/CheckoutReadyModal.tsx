@@ -2,13 +2,19 @@ import { ShoppingCart, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { OpenCheckoutBrowser } from "../../../wailsjs/go/payment/Payment";
+import { navigatePaths } from "@/types";
 
 interface CheckoutReadyModalProps {
   url: string;
   onClose: () => void;
+  navigate: (dest: navigatePaths) => void;
 }
 
-export function CheckoutReadyModal({ onClose, url }: CheckoutReadyModalProps) {
+export function CheckoutReadyModal({
+  onClose,
+  url,
+  navigate,
+}: CheckoutReadyModalProps) {
   return (
     <div
       className="absolute flex justify-center items-center w-full h-full top-0 left-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-md"
@@ -37,6 +43,7 @@ export function CheckoutReadyModal({ onClose, url }: CheckoutReadyModalProps) {
             className="mt-2 w-full bg-black text-white shadow-none hover:bg-zinc-800"
             onClick={() => {
               OpenCheckoutBrowser(url);
+              navigate("activate");
             }}
           >
             Proceed to Checkout

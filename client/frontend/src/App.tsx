@@ -1,3 +1,4 @@
+import { ActivateScene } from "@/scenes/payment/ActivateScene";
 import { AuthScene } from "@/scenes/auth/AuthScene";
 import {
   SubscriptionScene,
@@ -7,15 +8,15 @@ import { PaymentScene } from "@/scenes/payment/PaymentScene";
 import { useEffect, useState } from "react";
 import { GetState, CheckLicense } from "../wailsjs/go/main/App";
 import { MainPage } from "./scenes/main/MainPage";
+import { navigatePaths } from "./types";
 
 function App() {
-  const [page, setPage] = useState<
-    "auth" | "app" | "payment" | "subscription" | null
-  >(null);
+  const [page, setPage] = useState<navigatePaths | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-  const navigate = (p: "auth" | "app" | "payment" | "subscription") =>
-    setPage(p);
+  const navigate = (
+    p: "auth" | "app" | "payment" | "subscription" | "activate",
+  ) => setPage(p);
 
   useEffect(() => {
     const getStateAsync = async () => {
@@ -54,6 +55,7 @@ function App() {
             setSelectedPlan(plan);
             navigate("payment");
           }}
+          onActivate={() => navigate("activate")}
         />
       );
     case "payment":
@@ -64,11 +66,24 @@ function App() {
               setSelectedPlan(plan);
               navigate("payment");
             }}
+            onActivate={() => navigate("activate")}
           />
         );
       }
       return (
-        <PaymentScene plan={selectedPlan} onBack={() => navigate("app")} />
+        <PaymentScene
+          plan={selectedPlan}
+          navigate={(dest: navigatePaths) => {
+            navigate(dest);
+          }}
+        />
+      );
+    case "activate":
+      return (
+        <ActivateScene
+          onActivated={() => navigate("app")}
+          onBack={() => navigate("subscription")}
+        />
       );
     default:
       return <>loading</>;

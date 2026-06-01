@@ -12,7 +12,7 @@ import (
 
 func Migrate(db *gorm.DB) {
 
-	err := db.AutoMigrate(&domain.User{}, &domain.License{})
+	err := db.AutoMigrate(&domain.User{}, &domain.License{}, &domain.Payment{})
 	if err != nil {
 		log.Fatalf("migration failed: %s", err.Error())
 	}

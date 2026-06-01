@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"license-server/internals/domain"
 	"license-server/internals/service"
+	"log"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -46,7 +47,10 @@ func (h *LicenseHandler) ActivateLicense(w http.ResponseWriter, r *http.Request)
 
 	license, err := h.LicenseService.ActivateLicense(r.Context(), req)
 	if err != nil {
-		http.Error(w, fmt.Errorf("failed to generate a token: %s", err.Error()).Error(), http.StatusInternalServerError)
+		log.Printf("ActivateLicense error: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 

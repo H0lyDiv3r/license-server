@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -74,61 +75,64 @@ func (l *License) GenerateLicense(Duration domain.GenerateKeyRequest) (*domain.L
 	return &response, nil
 }
 
-func (l *License) ActivateLicense(key string) error {
+func (l *License) ActivateLicense(key string) (*domain.License, error) {
 
 	machineID, err := machineid.ProtectedID("secure_desktop")
 	if err != nil {
-		return fmt.Errorf("cant read machine id", err)
+		return nil, fmt.Errorf("cant read machine id", err)
 	}
 
 	payload, err := json.Marshal(domain.ActivateLicenseRequest{LicenseKey: key, FingerPrint: machineID})
 	if err != nil {
-		return fmt.Errorf("cant read request data", err)
+		return nil, fmt.Errorf("cant read request data", err)
 	}
 
 	req, err := http.NewRequest("POST", "http://localhost:3000/license/activate", bytes.NewReader(payload))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+l.state.AuthToken)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		var errResp map[string]string
-		_ = json.NewDecoder(res.Body).Decode(&errResp)
-		if msg := errResp["error"]; msg != "" {
-			return errors.New(msg)
-		}
-		return fmt.Errorf("activation failed with status %s", err)
+		body, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("activation failed (status %s): %s", res.Status, string(body))
 	}
 
 	var response struct {
 		License domain.License
-		Token   string `json:"token"`
+		Token   string
 	}
 
 	err = json.NewDecoder(res.Body).Decode(&response)
 	if err != nil {
-		return fmt.Errorf("failed to parse response body", err)
+		return nil, fmt.Errorf("failed to parse response body", err)
 	}
 
 	// create journal file
 	err = l.InitializeJournal()
 	if err != nil {
-		return fmt.Errorf("failed to initialize journal: %w", err)
+		return nil, fmt.Errorf("failed to initialize journal: %w", err)
 	}
 
 	fmt.Println("token generated", response)
-	_, err = l.store.UpdateLicense(l.ctx, domain.License{MachineID: &machineID, LicenseString: response.Token, Status: "active", Key: key})
+
+	fullLicense := response.License
+	fullLicense.LicenseString = response.Token
+	fullLicense.MachineID = &machineID
+	fullLicense.Status = "active"
+	fullLicense.Key = key
+
+	stored, err := l.store.StoreLicence(l.ctx, fullLicense)
 	if err != nil {
-		fmt.Errorf("updating issue: %w", err)
+		return nil, fmt.Errorf("updating issue: %w", err)
 	}
-	return nil
+	return stored, nil
 }
 
 func (l *License) DecodeLicense(license domain.License) (*domain.LicenseClaims, error) {

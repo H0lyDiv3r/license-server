@@ -25,7 +25,7 @@ type LoginResponse struct {
 
 type License struct {
 	ID            uint          `gorm:"primaryKey"`
-	Key           string        `gorm:"uniqueIndex; not null"`
+	Key           string        `json:"key" gorm:"uniqueIndex; not null"`
 	LicenseString string        `gorm:"uniqueIndex; not null"`
 	MachineID     *string       `gorm:"uniqueIndex"`
 	Status        LicenseStatus `gorm: "default:'pending'"`

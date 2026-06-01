@@ -14,7 +14,7 @@ export namespace domain {
 	}
 	export class License {
 	    ID: number;
-	    Key: string;
+	    key: string;
 	    LicenseString: string;
 	    MachineID?: string;
 	    Status: string;
@@ -33,7 +33,7 @@ export namespace domain {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
-	        this.Key = source["Key"];
+	        this.key = source["key"];
 	        this.LicenseString = source["LicenseString"];
 	        this.MachineID = source["MachineID"];
 	        this.Status = source["Status"];

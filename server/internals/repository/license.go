@@ -12,6 +12,7 @@ type LicenseRepository interface {
 	StoreKey(ctx context.Context, req domain.StoreKeyReq) (domain.License, error)
 	GetLicenseById(ctx context.Context, id string) (domain.License, error)
 	GetLicenseByKey(ctx context.Context, key string) (*domain.License, error)
+	GetLicenseBySessionId(ctx context.Context, sessionId string) (*domain.License, error)
 	UpdateLicense(ctx context.Context, license domain.License) (domain.License, error)
 }
 
@@ -62,6 +63,20 @@ func (l *licenseRepository) GetLicenseByKey(ctx context.Context, key string) (*d
 	license, err := gorm.G[domain.License](l.db).Where("key = ?", key).First(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	return &license, nil
+}
+
+func (l *licenseRepository) GetLicenseBySessionId(ctx context.Context, sessionId string) (*domain.License, error) {
+	payment, err := gorm.G[domain.Payment](l.db).Where("session_id = ?", sessionId).First(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("payment not found for session %s: %w", sessionId, err)
+	}
+
+	license, err := gorm.G[domain.License](l.db).Where("id = ?", payment.LicenseID).First(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("license not found for session %s: %w", sessionId, err)
 	}
 
 	return &license, nil

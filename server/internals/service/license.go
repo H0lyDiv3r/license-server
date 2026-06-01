@@ -45,6 +45,10 @@ func (s *LicenseService) GenerateKey(ctx context.Context, req domain.GenerateKey
 	return &license, nil
 }
 
+func (s *LicenseService) GetLicenseBySessionId(ctx context.Context, sessionId string) (*domain.License, error) {
+	return s.repository.GetLicenseBySessionId(ctx, sessionId)
+}
+
 func (s *LicenseService) ActivateLicense(ctx context.Context, req domain.ActivateLicenseRequest) (*domain.ActivateLicenseResponse, error) {
 
 	fmt.Println("this is the request just incase", req)

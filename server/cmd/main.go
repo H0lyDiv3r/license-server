@@ -144,23 +144,16 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 	r.Get("/success", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("bad stuff happens in the bathroom", r.URL.Query())
-		// Get the session ID from the URL parameter
-		// TODO: Look up the session in your database to get the license key
-		// For now, just show a placeholder
+		sessionID := r.URL.Query().Get("session_id")
 
-		html := `
-		<!DOCTYPE html>
+		html := `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment Successful</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
@@ -171,123 +164,135 @@ func main() {
       color: #f5f5f5;
       font-family: Arial, sans-serif;
     }
-
     .container {
       width: 100%;
       max-width: 560px;
       text-align: center;
       padding: 24px;
     }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: 2rem;
-      font-weight: 700;
+    h1 { margin: 0 0 12px; font-size: 2rem; font-weight: 700; }
+    p { margin: 0; color: #a3a3a3; line-height: 1.6; }
+    .spinner {
+      margin: 32px auto;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #2a2a2a;
+      border-top: 4px solid #f5f5f5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
-
-    p {
-      margin: 0;
-      color: #a3a3a3;
-      line-height: 1.6;
-    }
-
-    .key-row {
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .key-box {
       margin-top: 22px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .key {
-      flex: 1;
-      min-width: 0;
-      padding: 12px 0;
-      background: transparent;
-      border: none;
-      color: #e5e5e5;
+      padding: 16px;
+      background: #2a2a2a;
+      border-radius: 8px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.95rem;
-      text-align: left;
+      font-size: 1rem;
+      color: #e5e5e5;
       word-break: break-all;
       user-select: all;
     }
-
-    button {
-      flex: 0 0 auto;
-      height: 34px;
-      padding: 0 12px;
+    .copy-btn {
+      margin-top: 16px;
+      height: 38px;
+      padding: 0 24px;
       border: 0;
       border-radius: 8px;
-      background: #2a2a2a;
-      color: #f5f5f5;
-      font-size: 0.85rem;
+      background: #f5f5f5;
+      color: #111111;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #3a3a3a;
-    }
-
-    .status {
-      margin-top: 12px;
-      min-height: 18px;
-      font-size: 0.9rem;
-      color: #b5b5b5;
-    }
-
-    @media (max-width: 480px) {
-      .key-row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .key {
-        text-align: center;
-        padding: 8px 0;
-      }
-
-      button {
-        width: 100%;
-      }
-    }
+    .copy-btn:hover { background: #e5e5e5; }
+    .status { margin-top: 12px; min-height: 18px; font-size: 0.9rem; color: #a3a3a3; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Payment Successful</h1>
-    <p>Your license key is below.</p>
-
-    <div class="key-row">
-      <div class="key" id="licenseKey">` + key + r.URL.RawQuery + `</div>
-      <button id="copyBtn">Copy</button>
+    <div id="loading">
+      <h1>Processing Payment</h1>
+      <p>Getting your license key...</p>
+      <div class="spinner"></div>
     </div>
 
-    <div class="status" id="status"></div>
+    <div id="content" class="hidden">
+      <h1>Payment Successful</h1>
+      <p>Your license key is below. Copy it and paste it into the app.</p>
+      <div class="key-box" id="licenseKey"></div>
+      <button class="copy-btn" id="copyBtn">Copy to Clipboard</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div id="error" class="hidden">
+      <h1>Something went wrong</h1>
+      <p>Could not find your license key. Please contact support.</p>
+    </div>
   </div>
 
   <script>
-    const copyBtn = document.getElementById("copyBtn");
-    const licenseKey = document.getElementById("licenseKey");
-    const status = document.getElementById("status");
+    const sessionId = '` + sessionID + `';
 
-    copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(licenseKey.textContent.trim());
-        status.textContent = "Copied.";
-      } catch {
-        status.textContent = "Copy failed.";
-      }
-    });
+    if (!sessionId) {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.remove("hidden");
+    } else {
+      let attempts = 0;
+      const maxAttempts = 150; // 30 seconds
+
+      const interval = setInterval(() => {
+        attempts++;
+        if (attempts > maxAttempts) {
+          clearInterval(interval);
+          document.getElementById("loading").classList.add("hidden");
+          document.getElementById("error").classList.remove("hidden");
+          return;
+        }
+
+        fetch("/licenseBySession/" + sessionId)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.key) {
+              clearInterval(interval);
+              document.getElementById("loading").classList.add("hidden");
+              document.getElementById("content").classList.remove("hidden");
+              document.getElementById("licenseKey").textContent = data.key;
+            }
+          })
+          .catch(() => {});
+      }, 200);
+
+      document.getElementById("copyBtn").addEventListener("click", async () => {
+        const key = document.getElementById("licenseKey").textContent;
+        try {
+          await navigator.clipboard.writeText(key);
+          document.getElementById("status").textContent = "Copied!";
+        } catch {
+          document.getElementById("status").textContent = "Copy failed.";
+        }
+      });
+    }
   </script>
 </body>
-</html>
-		`
+</html>`
 
-		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write([]byte(html))
 	})
 	// r.Get("/failure")
+
+	r.Get("/licenseBySession/{sessionID}", func(w http.ResponseWriter, r *http.Request) {
+		sessionID := chi.URLParam(r, "sessionID")
+		license, err := licenseService.GetLicenseBySessionId(r.Context(), sessionID)
+		if err != nil {
+			http.Error(w, "license not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(license)
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTMiddleware)
